@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire de Notes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>🎓 Mon Carnet de Notes</h1>
+        <div class="year-selector-container">
+            <label for="yearSelect">Niveau / Année :</label>
+            <select id="yearSelect" onchange="changerAnnee()"></select>
+            <button onclick="ajouterAnnee()" class="btn-primary">+ Nouvelle Année</button>
+        </div>
+    </header>
+
+    <section class="backup-bar">
+        <span>💾 Sauvegarde :</span>
+        <button onclick="sauvegarderFichierDirect()" class="btn-secondary">Lier / Sync un Fichier Local</button>
+        <button onclick="exporterJSON()" class="btn-secondary">Télécharger Sauvegarde (.json)</button>
+        <button onclick="document.getElementById('importFile').click()" class="btn-secondary">Charger un Fichier</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importerJSON(event)">
+    </section>
+
+    <main class="container">
+        <!-- Section Ajout de Matière -->
+        <section class="card">
+            <h2>➕ Ajouter une Matière</h2>
+            <form id="addSubjectForm" onsubmit="ajouterMatiere(event)">
+                <div class="form-group">
+                    <label for="subjectName">Nom de la matière :</label>
+                    <input type="text" id="subjectName" required placeholder="Ex: Algorithmique">
+                </div>
+                <div class="form-group">
+                    <label for="subjectCoef">Coefficient :</label>
+                    <input type="number" id="subjectCoef" min="1" step="0.5" required placeholder="Ex: 3">
+                </div>
+                <div class="form-group checkbox-group">
+                    <input type="checkbox" id="hasTestLourd">
+                    <label for="hasTestLourd">Ce module comporte un Test Lourd</label>
+                </div>
+                <button type="submit" class="btn-success">Créer la matière</button>
+            </form>
+        </section>
+
+        <!-- Liste des matières et notes -->
+        <section id="subjectsList">
+            <!-- Les matières s'afficheront ici dynamiquement -->
+        </section>
+
+        <!-- Barre de calcul global -->
+        <section class="card summary-card">
+            <h2>📊 Résultat Général</h2>
+            <button onclick="calculerMoyennes()" class="btn-action">Tout calculer</button>
+            <div id="globalResult" class="result-box">
+                Moyenne Générale : <span id="overallAverage">--</span> / 20
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+                  </html>
+                  
