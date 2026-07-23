@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <!-- Icônes FontAwesome pour un rendu professionnel -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bibliothèque pour l'exportation PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 
@@ -38,11 +40,14 @@
         </div>
     </header>
 
-    <!-- Barre d'outils de Sauvegarde & Réinitialisation -->
+    <!-- Barre d'outils de Sauvegarde, PDF & Réinitialisation -->
     <section class="toolbar">
         <div class="toolbar-container">
-            <span class="toolbar-title"><i class="fa-solid fa-floppy-disk"></i> Synchronisation & Sécurité :</span>
+            <span class="toolbar-title"><i class="fa-solid fa-floppy-disk"></i> Synchronisation & Export :</span>
             <div class="toolbar-actions">
+                <button onclick="exporterPDF()" class="btn btn-secondary" style="background-color: #0284c7;" title="Télécharger le bulletin en PDF">
+                    <i class="fa-solid fa-file-pdf"></i> Exporter PDF
+                </button>
                 <button onclick="sauvegarderFichierDirect()" class="btn btn-secondary" title="Synchroniser avec un fichier local">
                     <i class="fa-solid fa-link"></i> Lier Fichier
                 </button>
@@ -139,7 +144,7 @@
                     </div>
                     <div class="result-divider"></div>
                     <div class="result-badge primary">
-                        <span class="badge-title">Moyenne Annuelle (S1 + S2)</span>
+                        <span class="badge-title">Moyenne Annuelle (S1 + S2) / 2</span>
                         <div class="badge-value"><span id="overallAverage">--</span> <small>/ 20</small></div>
                     </div>
                 </div>
