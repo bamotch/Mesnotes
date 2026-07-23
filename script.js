@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ==========================================================================
-   2. GESTION DES NIVEAUX ET SEMAESTRES
+   2. GESTION DES NIVEAUX ET SEMESTRES
    ========================================================================== */
 
 function initialiserSelects() {
@@ -77,7 +77,7 @@ function getMatieresCourantes() {
 }
 
 /* ==========================================================================
-   3. BASALEMENT MODE DE SAISIE & AJOUT DE MATIÈRE
+   3. BASCULEMENT MODE DE SAISIE & AJOUT DE MATIÈRE
    ========================================================================== */
 
 function basculerModeSaisie(mode) {
@@ -283,18 +283,19 @@ function calculerMoyennes() {
         elSemAvg.textContent = "--";
     }
 
-    // 2. Moyenne Annuelle (Combinaison S1 + S2)
+    // 2. Moyenne Annuelle : (Moyenne S1 + Moyenne S2) / 2
     let anneeObj = applicationData.annees[applicationData.anneeCourante];
     let resS1 = calculerMoyenneListeMatieres(anneeObj["S1"] || []);
     let resS2 = calculerMoyenneListeMatieres(anneeObj["S2"] || []);
 
-    let totalPointsAnnee = resS1.totalPoints + resS2.totalPoints;
-    let totalCoefsAnnee = resS1.totalCoefs + resS2.totalCoefs;
-
     let elOverall = document.getElementById("overallAverage");
-    if (totalCoefsAnnee > 0) {
-        let moyAnnee = totalPointsAnnee / totalCoefsAnnee;
+    if (resS1.moyenne !== null && resS2.moyenne !== null) {
+        let moyAnnee = (resS1.moyenne + resS2.moyenne) / 2;
         elOverall.textContent = moyAnnee.toFixed(2);
+    } else if (resS1.moyenne !== null) {
+        elOverall.textContent = resS1.moyenne.toFixed(2);
+    } else if (resS2.moyenne !== null) {
+        elOverall.textContent = resS2.moyenne.toFixed(2);
     } else {
         elOverall.textContent = "--";
     }
@@ -465,4 +466,137 @@ function importerJSON(event) {
 
 function sauvegarderFichierDirect() {
     exporterJSON();
+}
+
+/* ==========================================================================
+   8. GENERATION ET EXPORTATION PDF PROFESSIONNEL
+   ========================================================================== */
+
+function exporterPDF() {
+    let anneeNom = applicationData.anneeCourante;
+    let anneeObj = applicationData.annees[anneeNom];
+
+    let matieresS1 = anneeObj["S1"] || [];
+    let matieresS2 = anneeObj["S2"] || [];
+
+    let resS1 = calculerMoyenneListeMatieres(matieresS1);
+    let resS2 = calculerMoyenneListeMatieres(matieresS2);
+
+    // Calcul de la Moyenne Annuelle : (Moyenne S1 + Moyenne S2) / 2
+    let moyAnnee = "--";
+    if (resS1.moyenne !== null && resS2.moyenne !== null) {
+        moyAnnee = ((resS1.moyenne + resS2.moyenne) / 2).toFixed(2);
+    } else if (resS1.moyenne !== null) {
+        moyAnnee = resS1.moyenne.toFixed(2);
+    } else if (resS2.moyenne !== null) {
+        moyAnnee = resS2.moyenne.toFixed(2);
+    }
+
+    // Création du conteneur HTML éphémère pour le rendu du PDF
+    let container = document.createElement("div");
+    container.id = "pdfTemplate";
+
+    let htmlContent = `
+        <div class="pdf-header">
+            <h1>RELEVÉ DE NOTES ET RÉSULTATS ACADÉMIQUES</h1>
+            <p><strong>Niveau :</strong> ${anneeNom} | <strong>Date d'édition :</strong> ${new Date().toLocaleDateString('fr-FR')}</p>
+        </div>
+    `;
+
+    // Fonction interne pour générer le tableau d'un semestre
+    function genererTableauSemestre(nomSemestre, matieres, resSemestre) {
+        if (matieres.length === 0) {
+            return `<div class="pdf-section-title">${nomSemestre}</div><p style="font-size:12px; color:#64748b;">Aucun module enregistré pour ce semestre.</p>`;
+        }
+
+        let tableHtml = `
+            <div class="pdf-section-title">${nomSemestre}</div>
+            <table class="pdf-table">
+                <thead>
+                    <tr>
+                        <th>Module / Matière</th>
+                        <th class="center">Coef</th>
+                        <th>Détail des Notes</th>
+                        <th class="center">Moyenne Module</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        matieres.forEach((mat) => {
+            let detailNotes = "";
+            let moyModule = 0;
+
+            if (mat.mode === 'direct') {
+                detailNotes = "Saisie Directe";
+                moyModule = mat.moyenneDirecte !== null ? mat.moyenneDirecte : 0;
+            } else {
+                let devList = mat.devoirs.map(d => `${d.valeur}/20`).join(', ');
+                let tlStr = mat.hasTestLourd ? ` | TL: ${mat.noteTestLourd !== null ? mat.noteTestLourd + '/20' : 'N/A'}` : '';
+                detailNotes = (devList ? `Devoirs: [${devList}]` : 'Aucun devoir') + tlStr;
+
+                // Calcul selon pair / impair
+                let devoirsValides = mat.devoirs.map(d => d.valeur).filter(v => v !== null && !isNaN(v));
+                let moyDevoirs = devoirsValides.length > 0 ? devoirsValides.reduce((a, b) => a + b, 0) / devoirsValides.length : (mat.noteTestLourd || 0);
+                let tl = mat.noteTestLourd !== null ? mat.noteTestLourd : 0;
+
+                if (!mat.hasTestLourd) {
+                    moyModule = moyDevoirs;
+                } else if (mat.coef % 2 !== 0) {
+                    moyModule = ((tl * 2) + (moyDevoirs * 1)) / mat.coef;
+                } else {
+                    moyModule = ((tl * 60) + (moyDevoirs * 40)) / 100;
+                }
+            }
+
+            tableHtml += `
+                <tr>
+                    <td><strong>${mat.nom}</strong></td>
+                    <td class="center">${mat.coef}</td>
+                    <td>${detailNotes}</td>
+                    <td class="center"><strong>${moyModule.toFixed(2)} / 20</strong></td>
+                </tr>
+            `;
+        });
+
+        let moySemStr = resSemestre.moyenne !== null ? `${resSemestre.moyenne.toFixed(2)} / 20` : '--';
+
+        tableHtml += `
+                </tbody>
+            </table>
+            <div style="text-align: right; font-weight: bold; font-size: 13px; margin-bottom: 15px;">
+                Moyenne Générale ${nomSemestre} : <span style="color:#2563eb;">${moySemStr}</span>
+            </div>
+        `;
+
+        return tableHtml;
+    }
+
+    // Ajout du S1 et S2
+    htmlContent += genererTableauSemestre("SEMESTRE 1 (S1)", matieresS1, resS1);
+    htmlContent += genererTableauSemestre("SEMESTRE 2 (S2)", matieresS2, resS2);
+
+    // Synthèse Annuelle Finale (S1 + S2) / 2
+    htmlContent += `
+        <div class="pdf-summary-box">
+            <span>SYNTHÈSE ANNUELLE (${anneeNom})</span>
+            <span>Moyenne Générale (S1 + S2) / 2 : <span class="highlight">${moyAnnee} / 20</span></span>
+        </div>
+    `;
+
+    container.innerHTML = htmlContent;
+    document.body.appendChild(container);
+
+    // Configuration et téléchargement du PDF
+    let options = {
+        margin:       10,
+        filename:     `Releve_Notes_${anneeNom.replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(options).from(container).save().then(() => {
+        document.body.removeChild(container);
+    });
 }
