@@ -1,46 +1,43 @@
 /* ==========================================================================
-   1. VARIABLES GLOBAL ET REZ-DE-CHAUSSÉE (RESET)
+   1. VARIABLES DE THÈME & RESET
    ========================================================================== */
 :root {
     --primary-color: #2563eb;
     --primary-hover: #1d4ed8;
     --secondary-color: #475569;
-    --secondary-hover: #334155;
-    --danger-color: #dc2626;
-    --danger-hover: #b91c1c;
-    --bg-color: #f8fafc;
-    --card-bg: #ffffff;
-    --text-color: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --radius: 8px;
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --border-color: #334155;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --danger-color: #ef4444;
+    --danger-hover: #dc2626;
+    --success-color: #10b981;
+    --radius: 10px;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 * {
-    box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
     background-color: var(--bg-color);
-    color: var(--text-color);
+    color: var(--text-main);
     line-height: 1.6;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+    padding-bottom: 40px;
 }
 
 /* ==========================================================================
    2. ENTÊTE (HEADER)
    ========================================================================== */
 .app-header {
-    background-color: #0f172a;
-    color: #ffffff;
-    padding: 1.2rem 2rem;
+    background-color: var(--card-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 2rem;
     box-shadow: var(--shadow);
 }
 
@@ -51,13 +48,13 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 15px;
 }
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .brand-icon {
@@ -67,39 +64,40 @@ body {
 
 .brand h1 {
     font-size: 1.5rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .controls-bar {
     display: flex;
-    gap: 1.5rem;
     align-items: center;
+    gap: 20px;
     flex-wrap: wrap;
 }
 
 .control-group {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    font-size: 0.9rem;
 }
 
 .control-group select {
-    padding: 0.4rem 0.8rem;
-    border-radius: var(--radius);
-    border: 1px solid #334155;
-    background-color: #1e293b;
-    color: #ffffff;
-    font-size: 0.95rem;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 6px;
     outline: none;
+    cursor: pointer;
 }
 
 /* ==========================================================================
-   3. BARRE D'OUTILS (TOOLBAR / SYNCHRO & RAZ)
+   3. BARRE D'OUTILS (TOOLBAR & SYNCHRO)
    ========================================================================== */
 .toolbar {
-    background-color: #ffffff;
+    background-color: rgba(30, 41, 59, 0.6);
     border-bottom: 1px solid var(--border-color);
-    padding: 0.75rem 2rem;
+    padding: 0.8rem 2rem;
 }
 
 .toolbar-container {
@@ -109,30 +107,102 @@ body {
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: 15px;
 }
 
 .toolbar-title {
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
+    font-weight: 600;
 }
 
 .toolbar-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
 /* ==========================================================================
-   4. CONTENU PRINCIPAL & CARTES
+   4. BOUTONS
+   ========================================================================== */
+.btn {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    opacity: 0.9;
+}
+
+.btn-outline-light {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.btn-outline-light:hover {
+    background-color: var(--border-color);
+}
+
+.btn-danger-sm {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: var(--danger-color);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.btn-danger-sm:hover {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.btn-action {
+    background-color: var(--success-color);
+    color: white;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+.btn-action:hover {
+    opacity: 0.9;
+}
+
+/* ==========================================================================
+   5. CONTENU PRINCIPAL & CARTES
    ========================================================================== */
 .main-container {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
-    width: 100%;
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2rem;
@@ -140,24 +210,24 @@ body {
 
 .card {
     background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    border: 1px solid var(--border-color);
     overflow: hidden;
 }
 
 .card-header {
-    background-color: #f1f5f9;
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.02);
 }
 
 .card-header h2 {
-    font-size: 1.2rem;
-    color: var(--text-color);
+    font-size: 1.1rem;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 10px;
+    color: var(--text-main);
 }
 
 .card-body {
@@ -165,57 +235,57 @@ body {
 }
 
 /* ==========================================================================
-   5. FORMULAIRES ET INPUTS
+   6. FORMULAIRES
    ========================================================================== */
 .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 6px;
 }
 
 .form-group label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-color);
+    font-size: 0.85rem;
+    color: var(--text-muted);
 }
 
 .form-group input[type="text"],
 .form-group input[type="number"] {
-    padding: 0.6rem 0.8rem;
+    background-color: var(--bg-color);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    font-size: 0.95rem;
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
     outline: none;
-    transition: border-color 0.2s;
+    font-size: 0.95rem;
 }
 
-.form-group input[type="text"]:focus,
-.form-group input[type="number"]:focus {
+.form-group input:focus {
     border-color: var(--primary-color);
 }
 
 .checkbox-container {
-    margin-bottom: 1.2rem;
+    margin-top: 5px;
+    margin-bottom: 10px;
 }
 
 .custom-checkbox {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     cursor: pointer;
-    font-size: 0.95rem;
-    user-select: none;
+    font-size: 0.9rem;
+    color: var(--text-main);
 }
 
 /* ==========================================================================
-   6. GRILLE DES MODULES / MATIÈRES
+   7. GRILLE ET CARTE DES MATIÈRES
    ========================================================================== */
 .subjects-grid {
     display: grid;
@@ -232,8 +302,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 1rem;
-    position: relative;
+    gap: 12px;
 }
 
 .subject-header {
@@ -241,151 +310,87 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
+    padding-bottom: 8px;
 }
 
 .subject-title {
-    font-size: 1.1rem;
     font-weight: 700;
-    color: var(--primary-color);
+    font-size: 1rem;
+    display: block;
 }
 
 .subject-badge {
-    background-color: #e0e7ff;
-    color: #4338ca;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    background-color: var(--border-color);
+    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 4px;
+    display: inline-block;
 }
 
 .notes-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 6px;
+    margin: 8px 0;
 }
 
 .note-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #f8fafc;
-    padding: 0.4rem 0.6rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-}
-
-/* ==========================================================================
-   7. BOUTONS
-   ========================================================================== */
-.btn {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius);
-    border: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: background-color 0.2s, opacity 0.2s;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: #ffffff;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-}
-
-.btn-secondary {
-    background-color: var(--secondary-color);
-    color: #ffffff;
-}
-
-.btn-secondary:hover {
-    background-color: var(--secondary-hover);
-}
-
-.btn-danger-sm {
-    background-color: #fee2e2;
-    color: var(--danger-color);
-    padding: 0.4rem 0.75rem;
+    background-color: var(--bg-color);
+    padding: 6px 10px;
+    border-radius: 6px;
     font-size: 0.85rem;
 }
 
-.btn-danger-sm:hover {
-    background-color: #fca5a5;
-}
-
-.btn-outline-light {
-    background: transparent;
-    border: 1px solid #475569;
-    color: #ffffff;
-}
-
-.btn-outline-light:hover {
-    background-color: #1e293b;
-}
-
-.btn-block {
-    width: 100%;
-}
-
-.btn-action {
-    background-color: #10b981;
-    color: #ffffff;
-    font-size: 1.1rem;
-    padding: 0.8rem 2rem;
-}
-
-.btn-action:hover {
-    background-color: #059669;
-}
-
 /* ==========================================================================
-   8. SYNTHÈSE ET RÉSULTATS
+   8. SYNTHÈSE DES RÉSULTATS
    ========================================================================== */
-.text-center {
-    text-align: center;
+.summary-card .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .results-display {
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     gap: 2rem;
-    margin-top: 1.5rem;
     flex-wrap: wrap;
+    width: 100%;
+    margin-top: 10px;
 }
 
 .result-badge {
-    background-color: #f1f5f9;
-    padding: 1rem 2rem;
-    border-radius: var(--radius);
+    background-color: var(--bg-color);
     border: 1px solid var(--border-color);
-    min-width: 200px;
+    padding: 1.2rem 2rem;
+    border-radius: var(--radius);
+    text-align: center;
+    min-width: 220px;
 }
 
 .result-badge.primary {
-    background-color: #eff6ff;
-    border-color: #bfdbfe;
+    border-color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
 }
 
 .badge-title {
-    display: block;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
-    margin-bottom: 0.25rem;
+    display: block;
+    margin-bottom: 5px;
 }
 
 .badge-value {
     font-size: 2rem;
     font-weight: 800;
-    color: var(--text-color);
+    color: var(--text-main);
 }
 
 .result-badge.primary .badge-value {
@@ -399,35 +404,106 @@ body {
 }
 
 /* ==========================================================================
-   9. PIED DE PAGE (FOOTER) ET RESPONSIVE
+   9. FOOTER
    ========================================================================== */
 .app-footer {
     text-align: center;
     padding: 1.5rem;
-    background-color: #0f172a;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 0.85rem;
-    margin-top: auto;
+    border-top: 1px solid var(--border-color);
+    margin-top: 3rem;
+}
+
+/* ==========================================================================
+   10. STYLES SPÉCIFIQUES POUR L'EXPORTATION PDF
+   ========================================================================== */
+#pdfTemplate {
+    padding: 25px;
+    background: #ffffff;
+    color: #1e293b;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.pdf-header {
+    text-align: center;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.pdf-header h1 {
+    font-size: 20px;
+    color: #0f172a;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pdf-header p {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pdf-section-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #2563eb;
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 4px;
+    margin: 18px 0 10px 0;
+    text-transform: uppercase;
+}
+
+.pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    font-size: 11px;
+}
+
+.pdf-table th, .pdf-table td {
+    border: 1px solid #cbd5e1;
+    padding: 6px 10px;
+    text-align: left;
+}
+
+.pdf-table th {
+    background-color: #f1f5f9;
+    color: #0f172a;
+    font-weight: bold;
+}
+
+.pdf-table td.center {
+    text-align: center;
+}
+
+.pdf-summary-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8fafc;
+    border: 2px solid #2563eb;
+    border-radius: 6px;
+    padding: 12px 20px;
+    margin-top: 25px;
+    font-weight: bold;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.pdf-summary-box .highlight {
+    color: #2563eb;
+    font-size: 16px;
 }
 
 @media (max-width: 768px) {
-    .header-container,
-    .toolbar-container {
+    .header-container, .toolbar-container {
         flex-direction: column;
         align-items: stretch;
     }
-
-    .controls-bar,
-    .toolbar-actions {
-        justify-content: flex-start;
-    }
-
+    
     .result-divider {
         display: none;
-    }
-
-    .results-display {
-        flex-direction: column;
-        gap: 1rem;
     }
 }
