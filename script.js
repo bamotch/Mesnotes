@@ -1,65 +1,44 @@
-// Structure de données de l'application
+/* ==========================================================================
+   1. STRUCTURE DES DONNÉES & INITIALISATION
+   ========================================================================== */
+
 let applicationData = {
+    anneeCourante: "Licence 1",
+    semestreCourant: "S1",
     annees: {
-        "Licence 2 (2026-2027)": {
+        "Licence 1": {
             "S1": [],
             "S2": []
         }
-    },
-    anneeCourante: "Licence 2 (2026-2027)",
-    semestreCourant: "S1"
+    }
 };
 
-let fileHandle = null; // Référence API File System Access
+let currentEntryMode = 'notes'; // 'notes' ou 'direct'
 
 // Initialisation au chargement de la page
-window.onload = function() {
-    let savedData = localStorage.getItem("notes_app_data_v2");
-    if (savedData) {
-        try {
-            applicationData = JSON.parse(savedData);
-        } catch (e) {
-            console.error("Erreur de chargement des données", e);
-        }
-    }
-    rafraichirSelecteurs();
+document.addEventListener("DOMContentLoaded", () => {
+    chargerDonneesLocales();
+    initialiserSelects();
     afficherMatiereCourantes();
-};
+});
 
-function sauvegarderAuto() {
-    localStorage.setItem("notes_app_data_v2", JSON.stringify(applicationData));
-    sauvegarderFichierLie();
-}
+/* ==========================================================================
+   2. GESTION DES NIVEAUX ET SEMAESTRES
+   ========================================================================== */
 
-// Gestion des niveaux / années
-function ajouterAnnee() {
-    let nomAnnee = prompt("Entrez le nom du niveau (ex: Licence 3, Master 1) :");
-    if (nomAnnee && nomAnnee.trim() !== "") {
-        nomAnnee = nomAnnee.trim();
-        if (!applicationData.annees[nomAnnee]) {
-            applicationData.annees[nomAnnee] = { "S1": [], "S2": [] };
-        }
-        applicationData.anneeCourante = nomAnnee;
-        applicationData.semestreCourant = "S1";
-        sauvegarderAuto();
-        rafraichirSelecteurs();
-        afficherMatiereCourantes();
-    }
-}
+function initialiserSelects() {
+    let yearSelect = document.getElementById("yearSelect");
+    yearSelect.innerHTML = "";
 
-function rafraichirSelecteurs() {
-    let selectYear = document.getElementById("yearSelect");
-    selectYear.innerHTML = "";
-    for (let annee in applicationData.annees) {
+    Object.keys(applicationData.annees).forEach((annee) => {
         let option = document.createElement("option");
         option.value = annee;
         option.textContent = annee;
         if (annee === applicationData.anneeCourante) option.selected = true;
-        selectYear.appendChild(option);
-    }
+        yearSelect.appendChild(option);
+    });
 
-    let selectSem = document.getElementById("semesterSelect");
-    selectSem.value = applicationData.semestreCourant;
+    document.getElementById("semesterSelect").value = applicationData.semestreCourant;
     document.getElementById("currentSemesterLabel").textContent = applicationData.semestreCourant === "S1" ? "Semestre 1" : "Semestre 2";
 }
 
@@ -76,22 +55,52 @@ function changerSemestre() {
     afficherMatiereCourantes();
 }
 
-// Récupération des matières du semestre courant
-function getMatieresCourantes() {
-    let anneeObj = applicationData.annees[applicationData.anneeCourante];
-    if (!anneeObj) return [];
-    if (!anneeObj[applicationData.semestreCourant]) {
-        anneeObj[applicationData.semestreCourant] = [];
+function ajouterAnnee() {
+    let nomNouveau = prompt("Entrez le nom du nouveau niveau (ex: Licence 2, Master 1) :");
+    if (nomNouveau && nomNouveau.trim() !== "") {
+        nomNouveau = nomNouveau.trim();
+        if (!applicationData.annees[nomNouveau]) {
+            applicationData.annees[nomNouveau] = { "S1": [], "S2": [] };
+            applicationData.anneeCourante = nomNouveau;
+            applicationData.semestreCourant = "S1";
+            sauvegarderAuto();
+            initialiserSelects();
+            afficherMatiereCourantes();
+        } else {
+            alert("Ce niveau existe déjà !");
+        }
     }
-    return anneeObj[applicationData.semestreCourant];
 }
 
-// Ajout d'une matière
+function getMatieresCourantes() {
+    return applicationData.annees[applicationData.anneeCourante][applicationData.semestreCourant];
+}
+
+/* ==========================================================================
+   3. BASALEMENT MODE DE SAISIE & AJOUT DE MATIÈRE
+   ========================================================================== */
+
+function basculerModeSaisie(mode) {
+    currentEntryMode = mode;
+    let directGroup = document.getElementById('directAvgGroup');
+    let notesGroup = document.getElementById('notesGroup');
+    let directAvgInput = document.getElementById('directAverage');
+
+    if (mode === 'direct') {
+        directGroup.style.display = 'flex';
+        notesGroup.style.display = 'none';
+        directAvgInput.required = true;
+    } else {
+        directGroup.style.display = 'none';
+        notesGroup.style.display = 'flex';
+        directAvgInput.required = false;
+    }
+}
+
 function ajouterMatiere(event) {
     event.preventDefault();
     let name = document.getElementById("subjectName").value.trim();
     let coef = parseFloat(document.getElementById("subjectCoef").value);
-    let hasTestLourd = document.getElementById("hasTestLourd").checked;
 
     if (!name || isNaN(coef)) return;
 
@@ -99,209 +108,156 @@ function ajouterMatiere(event) {
         id: Date.now(),
         nom: name,
         coef: coef,
-        hasTestLourd: hasTestLourd,
+        mode: currentEntryMode, // 'notes' ou 'direct'
+        moyenneDirecte: currentEntryMode === 'direct' ? parseFloat(document.getElementById("directAverage").value) : null,
+        hasTestLourd: currentEntryMode === 'notes' ? document.getElementById("hasTestLourd").checked : false,
         devoirs: [],
-        noteTestLourd: null,
-        photoTestLourd: null
+        noteTestLourd: null
     };
 
     getMatieresCourantes().push(nouvelleMatiere);
     sauvegarderAuto();
     document.getElementById("addSubjectForm").reset();
+    basculerModeSaisie('notes');
     afficherMatiereCourantes();
+}
+
+/* ==========================================================================
+   4. GESTION DES NOTES ET MODIFICATIONS
+   ========================================================================== */
+
+function ajouterDevoir(matiereId) {
+    let mat = getMatieresCourantes().find(m => m.id === matiereId);
+    if (!mat) return;
+
+    let noteStr = prompt(`Entrez la note de devoir pour ${mat.nom} (/20) :`);
+    if (noteStr !== null && noteStr.trim() !== "") {
+        let note = parseFloat(noteStr.replace(',', '.'));
+        if (!isNaN(note) && note >= 0 && note <= 20) {
+            mat.devoirs.push({ id: Date.now(), valeur: note });
+            sauvegarderAuto();
+            afficherMatiereCourantes();
+        } else {
+            alert("Veuillez entrer une note valide entre 0 et 20.");
+        }
+    }
+}
+
+function modifierDevoir(matiereId, devoirId) {
+    let mat = getMatieresCourantes().find(m => m.id === matiereId);
+    if (!mat) return;
+
+    let dev = mat.devoirs.find(d => d.id === devoirId);
+    if (!dev) return;
+
+    let nouvelleNoteStr = prompt("Modifier la note de devoir (/20) :", dev.valeur);
+    if (nouvelleNoteStr !== null && nouvelleNoteStr.trim() !== "") {
+        let note = parseFloat(nouvelleNoteStr.replace(',', '.'));
+        if (!isNaN(note) && note >= 0 && note <= 20) {
+            dev.valeur = note;
+            sauvegarderAuto();
+            afficherMatiereCourantes();
+        } else {
+            alert("Veuillez entrer une note valide entre 0 et 20.");
+        }
+    }
+}
+
+function supprimerDevoir(matiereId, devoirId) {
+    let mat = getMatieresCourantes().find(m => m.id === matiereId);
+    if (!mat) return;
+
+    mat.devoirs = mat.devoirs.filter(d => d.id !== devoirId);
+    sauvegarderAuto();
+    afficherMatiereCourantes();
+}
+
+function enregistrerTestLourd(matiereId) {
+    let mat = getMatieresCourantes().find(m => m.id === matiereId);
+    if (!mat) return;
+
+    let ancVal = mat.noteTestLourd !== null ? mat.noteTestLourd : "";
+    let noteStr = prompt(`Note du Test Lourd pour ${mat.nom} (/20) :`, ancVal);
+
+    if (noteStr !== null && noteStr.trim() !== "") {
+        let note = parseFloat(noteStr.replace(',', '.'));
+        if (!isNaN(note) && note >= 0 && note <= 20) {
+            mat.noteTestLourd = note;
+            sauvegarderAuto();
+            afficherMatiereCourantes();
+        } else {
+            alert("Veuillez entrer une note valide entre 0 et 20.");
+        }
+    }
+}
+
+function modifierMoyenneDirecte(matiereId) {
+    let mat = getMatieresCourantes().find(m => m.id === matiereId);
+    if (!mat) return;
+
+    let noteStr = prompt(`Modifier la moyenne du module ${mat.nom} (/20) :`, mat.moyenneDirecte);
+    if (noteStr !== null && noteStr.trim() !== "") {
+        let note = parseFloat(noteStr.replace(',', '.'));
+        if (!isNaN(note) && note >= 0 && note <= 20) {
+            mat.moyenneDirecte = note;
+            sauvegarderAuto();
+            afficherMatiereCourantes();
+        }
+    }
 }
 
 function supprimerMatiere(matiereId) {
     if (confirm("Voulez-vous vraiment supprimer cette matière ?")) {
         let matieres = getMatieresCourantes();
-        applicationData.annees[applicationData.anneeCourante][applicationData.semestreCourant] = matieres.filter(m => m.id !== matiereId);
-        sauvegarderAuto();
-        afficherMatiereCourantes();
-    }
-}
-
-// Affichage dynamique des matières
-function afficherMatiereCourantes() {
-    let container = document.getElementById("subjectsList");
-    container.innerHTML = "";
-    let matieres = getMatieresCourantes();
-
-    if (matieres.length === 0) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:30px; background:#fff; border-radius:12px;">
-            <i class="fa-solid fa-folder-open" style="font-size:2.5rem; margin-bottom:10px;"></i>
-            <p>Aucune matière ajoutée pour ce semestre. Utilisez le formulaire ci-dessus pour commencer.</p>
-        </div>`;
-        return;
-    }
-
-    matieres.forEach((mat) => {
-        let card = document.createElement("div");
-        card.className = "card subject-card";
-
-        let html = `
-            <div>
-                <div class="subject-header">
-                    <span class="subject-title">${mat.nom}</span>
-                    <span class="coef-badge">Coef: ${mat.coef}</span>
-                </div>
-                <div class="subject-type">
-                    <i class="fa-solid fa-layer-group"></i> ${mat.hasTestLourd ? "Devoir(s) + Test Lourd" : "Devoirs uniquement"}
-                </div>
-
-                <!-- Section Devoirs -->
-                <div class="section-title"><i class="fa-solid fa-pen"></i> Devoirs :</div>
-                <div class="notes-list">`;
-
-        mat.devoirs.forEach((d, idx) => {
-            html += `
-                <div class="note-row">
-                    <span style="font-size:0.85rem; font-weight:600;">Devoir ${idx + 1}</span>
-                    <input type="number" class="note-input" step="0.25" min="0" max="20" placeholder="--/20" value="${d.valeur !== null ? d.valeur : ''}" onchange="mettreAJourDevoir(${mat.id}, ${idx}, this.value)">
-                    <div class="btn btn-secondary file-upload-btn" title="Joindre la photo de la copie">
-                        <i class="fa-solid fa-camera"></i>
-                        <input type="file" accept="image/*" onchange="ajouterPhotoDevoir(${mat.id}, ${idx}, event)">
-                    </div>
-                    ${d.photo ? `<img src="${d.photo}" class="image-preview" onclick="ouvrirImage('${d.photo}')" title="Voir la photo">` : ''}
-                    <button onclick="supprimerDevoir(${mat.id}, ${idx})" class="btn btn-danger-sm" title="Supprimer ce devoir"><i class="fa-solid fa-trash"></i></button>
-                </div>`;
-        });
-
-        html += `
-                </div>
-                <button onclick="ajouterDevoir(${mat.id})" class="btn btn-secondary btn-block" style="margin-top:10px; font-size:0.85rem;">
-                    <i class="fa-solid fa-plus"></i> Ajouter un devoir
-                </button>`;
-
-        // Section Test Lourd si activée
-        if (mat.hasTestLourd) {
-            html += `
-                <div class="section-title" style="margin-top:15px;"><i class="fa-solid fa-file-signature"></i> Test Lourd :</div>
-                <div class="note-row">
-                    <span style="font-size:0.85rem; font-weight:600;">Test Lourd</span>
-                    <input type="number" class="note-input" step="0.25" min="0" max="20" placeholder="--/20" value="${mat.noteTestLourd !== null ? mat.noteTestLourd : ''}" onchange="mettreAJourTestLourd(${mat.id}, this.value)">
-                    <div class="btn btn-secondary file-upload-btn" title="Joindre la photo de la copie">
-                        <i class="fa-solid fa-camera"></i>
-                        <input type="file" accept="image/*" onchange="ajouterPhotoTL(${mat.id}, event)">
-                    </div>
-                    ${mat.photoTestLourd ? `<img src="${mat.photoTestLourd}" class="image-preview" onclick="ouvrirImage('${mat.photoTestLourd}')" title="Voir la photo">` : ''}
-                </div>`;
-        }
-
-        html += `
-            </div>
-            <div>
-                <div class="module-avg-box">
-                    Moyenne : <span id="avg-${mat.id}" class="module-avg-val">--</span> / 20
-                </div>
-                <button onclick="supprimerMatiere(${mat.id})" class="btn btn-danger-sm btn-block" style="margin-top:8px;">
-                    <i class="fa-solid fa-trash"></i> Supprimer le module
-                </button>
-            </div>`;
-
-        card.innerHTML = html;
-        container.appendChild(card);
-    });
-}
-
-// Fonctions de modification des devoirs / notes
-function ajouterDevoir(matiereId) {
-    let mat = getMatieresCourantes().find(m => m.id === matiereId);
-    if (mat) {
-        mat.devoirs.push({ valeur: null, photo: null });
-        sauvegarderAuto();
-        afficherMatiereCourantes();
-    }
-}
-
-function supprimerDevoir(matiereId, idx) {
-    let mat = getMatieresCourantes().find(m => m.id === matiereId);
-    if (mat) {
-        mat.devoirs.splice(idx, 1);
-        sauvegarderAuto();
-        afficherMatiereCourantes();
-    }
-}
-
-function mettreAJourDevoir(matiereId, devoirIndex, valeur) {
-    let mat = getMatieresCourantes().find(m => m.id === matiereId);
-    if (mat) {
-        mat.devoirs[devoirIndex].valeur = valeur !== "" ? parseFloat(valeur) : null;
-        sauvegarderAuto();
-    }
-}
-
-function mettreAJourTestLourd(matiereId, valeur) {
-    let mat = getMatieresCourantes().find(m => m.id === matiereId);
-    if (mat) {
-        mat.noteTestLourd = valeur !== "" ? parseFloat(valeur) : null;
-        sauvegarderAuto();
-    }
-}
-
-// Gestion de la sauvegarde des photos en Base64
-function ajouterPhotoDevoir(matiereId, idx, event) {
-    let file = event.target.files[0];
-    if (!file) return;
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        let mat = getMatieresCourantes().find(m => m.id === matiereId);
-        if (mat) {
-            mat.devoirs[idx].photo = e.target.result;
+        let index = matieres.findIndex(m => m.id === matiereId);
+        if (index !== -1) {
+            matieres.splice(index, 1);
             sauvegarderAuto();
             afficherMatiereCourantes();
         }
-    };
-    reader.readAsDataURL(file);
+    }
 }
 
-function ajouterPhotoTL(matiereId, event) {
-    let file = event.target.files[0];
-    if (!file) return;
-    let reader = new FileReader();
-    reader.onload = function(e) {
-        let mat = getMatieresCourantes().find(m => m.id === matiereId);
-        if (mat) {
-            mat.photoTestLourd = e.target.result;
-            sauvegarderAuto();
-            afficherMatiereCourantes();
-        }
-    };
-    reader.readAsDataURL(file);
-}
+/* ==========================================================================
+   5. LOGIQUE DES CALCULS (FORMULES EXACTES PAIR / IMPAIR)
+   ========================================================================== */
 
-function ouvrirImage(dataUrl) {
-    let w = window.open("");
-    w.document.write(`<img src="${dataUrl}" style="max-width:100%; height:auto;">`);
-}
-
-// Algorithme de calcul
 function calculerMoyenneListeMatieres(matieres) {
     let totalPoints = 0;
     let totalCoefs = 0;
 
     matieres.forEach((mat) => {
-        let devoirsValides = mat.devoirs.map(d => d.valeur).filter(v => v !== null && !isNaN(v));
-        let moyDevoirs = 0;
-
-        if (devoirsValides.length > 0) {
-            moyDevoirs = devoirsValides.reduce((a, b) => a + b, 0) / devoirsValides.length;
-        } else if (mat.hasTestLourd && mat.noteTestLourd !== null) {
-            // Pas de devoirs : la note du test lourd devient la note du devoir
-            moyDevoirs = mat.noteTestLourd;
-        }
-
         let moyModule = 0;
 
-        if (!mat.hasTestLourd) {
-            moyModule = moyDevoirs;
-        } else {
-            let tl = mat.noteTestLourd !== null ? mat.noteTestLourd : 0;
-            if (mat.coef % 2 !== 0) {
-                // Coefficient Impair (ex: 3) -> 2 pour Test Lourd, 1 pour Devoir
-                moyModule = ((tl * 2) + (moyDevoirs * 1)) / 3;
+        // MODE 1 : Saisie Directe de la Moyenne
+        if (mat.mode === 'direct') {
+            moyModule = mat.moyenneDirecte !== null ? mat.moyenneDirecte : 0;
+        } 
+        // MODE 2 : Saisie Détaillée (Devoirs + Test Lourd)
+        else {
+            let devoirsValides = mat.devoirs.map(d => d.valeur).filter(v => v !== null && !isNaN(v));
+            let moyDevoirs = 0;
+
+            if (devoirsValides.length > 0) {
+                moyDevoirs = devoirsValides.reduce((a, b) => a + b, 0) / devoirsValides.length;
+            } else if (mat.hasTestLourd && mat.noteTestLourd !== null) {
+                moyDevoirs = mat.noteTestLourd;
+            }
+
+            if (!mat.hasTestLourd) {
+                moyModule = moyDevoirs;
             } else {
-                // Coefficient Pair (ex: 2) -> 60% Test Lourd, 40% Devoirs
-                moyModule = (tl * 0.60) + (moyDevoirs * 0.40);
+                let tl = mat.noteTestLourd !== null ? mat.noteTestLourd : 0;
+                
+                if (mat.coef % 2 !== 0) {
+                    // COEFFICIENT IMPAIR (ex: 3)
+                    // (Test Lourd * 2 + Moyenne Devoirs * 1) / Coef
+                    moyModule = ((tl * 2) + (moyDevoirs * 1)) / mat.coef;
+                } else {
+                    // COEFFICIENT PAIR (ex: 2)
+                    // (Test Lourd * 60 + Moyenne Devoirs * 40) / 100
+                    moyModule = ((tl * 60) + (moyDevoirs * 40)) / 100;
+                }
             }
         }
 
@@ -316,26 +272,168 @@ function calculerMoyenneListeMatieres(matieres) {
 }
 
 function calculerMoyennes() {
-    let resSemestre = calculerMoyenneListeMatieres(getMatieresCourantes());
-    document.getElementById("semesterAverage").textContent = resSemestre.moyenne !== null ? resSemestre.moyenne.toFixed(2) : "--";
+    // 1. Moyenne du Semestre Courant
+    let matieresSemestre = getMatieresCourantes();
+    let resSemestre = calculerMoyenneListeMatieres(matieresSemestre);
 
+    let elSemAvg = document.getElementById("semesterAverage");
+    if (resSemestre.moyenne !== null) {
+        elSemAvg.textContent = resSemestre.moyenne.toFixed(2);
+    } else {
+        elSemAvg.textContent = "--";
+    }
+
+    // 2. Moyenne Annuelle (Combinaison S1 + S2)
     let anneeObj = applicationData.annees[applicationData.anneeCourante];
     let resS1 = calculerMoyenneListeMatieres(anneeObj["S1"] || []);
     let resS2 = calculerMoyenneListeMatieres(anneeObj["S2"] || []);
 
-    let totalPointsAnnee = (resS1.totalPoints || 0) + (resS2.totalPoints || 0);
-    let totalCoefsAnnee = (resS1.totalCoefs || 0) + (resS2.totalCoefs || 0);
+    let totalPointsAnnee = resS1.totalPoints + resS2.totalPoints;
+    let totalCoefsAnnee = resS1.totalCoefs + resS2.totalCoefs;
 
-    let moyAnnuelle = totalCoefsAnnee > 0 ? (totalPointsAnnee / totalCoefsAnnee).toFixed(2) : "--";
-    document.getElementById("overallAverage").textContent = moyAnnuelle;
+    let elOverall = document.getElementById("overallAverage");
+    if (totalCoefsAnnee > 0) {
+        let moyAnnee = totalPointsAnnee / totalCoefsAnnee;
+        elOverall.textContent = moyAnnee.toFixed(2);
+    } else {
+        elOverall.textContent = "--";
+    }
 }
 
-// Exportation / Importation JSON
+/* ==========================================================================
+   6. AFFICHAGE DYNAMIQUE DE LA LISTE DES MATIÈRES
+   ========================================================================== */
+
+function afficherMatiereCourantes() {
+    let listContainer = document.getElementById("subjectsList");
+    listContainer.innerHTML = "";
+    let matieres = getMatieresCourantes();
+
+    if (matieres.length === 0) {
+        listContainer.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">Aucun module enregistré pour ce semestre.</div>`;
+        calculerMoyennes();
+        return;
+    }
+
+    matieres.forEach((mat) => {
+        let card = document.createElement("div");
+        card.className = "subject-card";
+
+        let contentHTML = `
+            <div class="subject-header">
+                <div>
+                    <span class="subject-title">${mat.nom}</span>
+                    <span class="subject-badge">Coef: ${mat.coef}</span>
+                </div>
+                <button onclick="supprimerMatiere(${mat.id})" class="btn btn-danger-sm" title="Supprimer la matière">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+            <div class="notes-list">
+        `;
+
+        if (mat.mode === 'direct') {
+            contentHTML += `
+                <div class="note-item">
+                    <span>Moyenne Directe :</span>
+                    <strong>${mat.moyenneDirecte !== null ? mat.moyenneDirecte + ' / 20' : 'Non renseignée'}</strong>
+                    <button onclick="modifierMoyenneDirecte(${mat.id})" class="btn btn-secondary" style="padding:2px 6px; font-size:0.75rem;">
+                        <i class="fa-solid fa-pen"></i>
+                    </button>
+                </div>
+            `;
+        } else {
+            // Affichage Devoirs
+            contentHTML += `<div style="font-size:0.85rem; font-weight:bold; color:var(--text-muted);">Devoirs :</div>`;
+            if (mat.devoirs.length === 0) {
+                contentHTML += `<div class="note-item" style="color:var(--text-muted);">Aucune note de devoir</div>`;
+            } else {
+                mat.devoirs.forEach((d, index) => {
+                    contentHTML += `
+                        <div class="note-item">
+                            <span>Devoir ${index + 1} : <strong>${d.valeur} / 20</strong></span>
+                            <div>
+                                <button onclick="modifierDevoir(${mat.id}, ${d.id})" class="btn btn-secondary" style="padding:2px 6px; font-size:0.75rem;"><i class="fa-solid fa-pen"></i></button>
+                                <button onclick="supprimerDevoir(${mat.id}, ${d.id})" class="btn btn-danger-sm" style="padding:2px 6px; font-size:0.75rem;"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            contentHTML += `
+                <button onclick="ajouterDevoir(${mat.id})" class="btn btn-outline-light" style="color:var(--primary-color); border-color:var(--primary-color); margin-top:5px; font-size:0.8rem;">
+                    <i class="fa-solid fa-plus"></i> Ajouter Devoir
+                </button>
+            `;
+
+            // Affichage Test Lourd
+            if (mat.hasTestLourd) {
+                contentHTML += `<div style="font-size:0.85rem; font-weight:bold; color:var(--text-muted); margin-top:10px;">Test Lourd :</div>`;
+                contentHTML += `
+                    <div class="note-item">
+                        <span>Note TL : <strong>${mat.noteTestLourd !== null ? mat.noteTestLourd + ' / 20' : 'Non saisie'}</strong></span>
+                        <button onclick="enregistrerTestLourd(${mat.id})" class="btn btn-secondary" style="padding:2px 6px; font-size:0.75rem;">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        contentHTML += `
+            </div>
+            <div style="border-top:1px solid var(--border-color); padding-top:8px; text-align:right; font-weight:bold; font-size:0.95rem;">
+                Moyenne Module : <span id="avg-${mat.id}">--</span> / 20
+            </div>
+        `;
+
+        card.innerHTML = contentHTML;
+        listContainer.appendChild(card);
+    });
+
+    calculerMoyennes();
+}
+
+/* ==========================================================================
+   7. RÉINITIALISATION ET SAUVEGARDE (LOCALSTORAGE & JSON)
+   ========================================================================== */
+
+function reinitialiserSemestre() {
+    if (confirm(`Voulez-vous réinitialiser toutes les matières du ${applicationData.semestreCourant} ?`)) {
+        applicationData.annees[applicationData.anneeCourante][applicationData.semestreCourant] = [];
+        sauvegarderAuto();
+        afficherMatiereCourantes();
+    }
+}
+
+function reinitialiserNiveau() {
+    if (confirm(`Voulez-vous réinitialiser TOUT le niveau ${applicationData.anneeCourante} (S1 et S2) ?`)) {
+        applicationData.annees[applicationData.anneeCourante] = { "S1": [], "S2": [] };
+        sauvegarderAuto();
+        afficherMatiereCourantes();
+    }
+}
+
+function sauvegarderAuto() {
+    localStorage.setItem("carnetNotesData", JSON.stringify(applicationData));
+}
+
+function chargerDonneesLocales() {
+    let localData = localStorage.getItem("carnetNotesData");
+    if (localData) {
+        try {
+            applicationData = JSON.parse(localData);
+        } catch (e) {
+            console.error("Erreur de lecture du LocalStorage", e);
+        }
+    }
+}
+
 function exporterJSON() {
     let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(applicationData, null, 2));
     let downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `sauvegarde_notes_${applicationData.anneeCourante.replace(/\s+/g, '_')}.json`);
+    downloadAnchor.setAttribute("download", `Carnet_Notes_${applicationData.anneeCourante}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -344,47 +442,27 @@ function exporterJSON() {
 function importerJSON(event) {
     let file = event.target.files[0];
     if (!file) return;
+
     let reader = new FileReader();
     reader.onload = function(e) {
         try {
-            applicationData = JSON.parse(e.target.result);
-            sauvegarderAuto();
-            rafraichirSelecteurs();
-            afficherMatiereCourantes();
-            alert("Sauvegarde chargée avec succès !");
+            let data = JSON.parse(e.target.result);
+            if (data.annees) {
+                applicationData = data;
+                sauvegarderAuto();
+                initialiserSelects();
+                afficherMatiereCourantes();
+                alert("Données importées avec succès !");
+            } else {
+                alert("Format de fichier JSON invalide.");
+            }
         } catch (err) {
-            alert("Erreur lors de la lecture du fichier de sauvegarde.");
+            alert("Erreur lors de la lecture du fichier JSON.");
         }
     };
     reader.readAsText(file);
 }
 
-// File System Access API
-async function sauvegarderFichierDirect() {
-    if ('showSaveFilePicker' in window) {
-        try {
-            fileHandle = await window.showSaveFilePicker({
-                suggestedName: `sauvegarde_notes.json`,
-                types: [{ description: 'Fichier JSON', accept: { 'application/json': ['.json'] } }]
-            });
-            await sauvegarderFichierLie();
-            alert("Fichier local lié avec succès ! Les modifications y seront synchronisées.");
-        } catch (err) {
-            console.log("Sélection annulée.");
-        }
-    } else {
-        alert("L'API File System Direct n'est pas supportée par ce navigateur. Utilisez le bouton Sauvegarder (.json).");
-    }
-}
-
-async function sauvegarderFichierLie() {
-    if (fileHandle) {
-        try {
-            const writable = await fileHandle.createWritable();
-            await writable.write(JSON.stringify(applicationData, null, 2));
-            await writable.close();
-        } catch (err) {
-            console.error("Erreur d'écriture dans le fichier", err);
-        }
-    }
+function sauvegarderFichierDirect() {
+    exporterJSON();
 }
