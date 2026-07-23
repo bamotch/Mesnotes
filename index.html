@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionnaire de Notes Pro</title>
+    <title>Carnet de Notes Pro</title>
     <link rel="stylesheet" href="style.css">
     <!-- Icônes FontAwesome pour un rendu professionnel -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,21 +38,29 @@
         </div>
     </header>
 
-    <!-- Barre d'outils de Sauvegarde / Synchronisation -->
+    <!-- Barre d'outils de Sauvegarde & Réinitialisation -->
     <section class="toolbar">
         <div class="toolbar-container">
             <span class="toolbar-title"><i class="fa-solid fa-floppy-disk"></i> Synchronisation & Sécurité :</span>
             <div class="toolbar-actions">
-                <button onclick="sauvegarderFichierDirect()" class="btn btn-secondary" title="Synchroniser avec un fichier local (Navigateurs compatibles)">
-                    <i class="fa-solid fa-link"></i> Lier un Fichier Local
+                <button onclick="sauvegarderFichierDirect()" class="btn btn-secondary" title="Synchroniser avec un fichier local">
+                    <i class="fa-solid fa-link"></i> Lier Fichier
                 </button>
                 <button onclick="exporterJSON()" class="btn btn-secondary" title="Exporter une copie .json">
-                    <i class="fa-solid fa-download"></i> Sauvegarder (.json)
+                    <i class="fa-solid fa-download"></i> Sauvegarder
                 </button>
                 <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary" title="Restaurer un fichier">
-                    <i class="fa-solid fa-file-import"></i> Charger Sauvegarde
+                    <i class="fa-solid fa-file-import"></i> Charger
                 </button>
                 <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importerJSON(event)">
+
+                <!-- Boutons de Réinitialisation (RAZ) -->
+                <button onclick="reinitialiserSemestre()" class="btn btn-danger-sm" title="Effacer le semestre en cours">
+                    <i class="fa-solid fa-rotate-left"></i> RAZ Semestre
+                </button>
+                <button onclick="reinitialiserNiveau()" class="btn btn-danger-sm" title="Effacer tout le niveau">
+                    <i class="fa-solid fa-trash"></i> RAZ Niveau
+                </button>
             </div>
         </div>
     </section>
@@ -60,33 +68,53 @@
     <!-- Contenu Principal -->
     <main class="main-container">
 
-        <!-- Formulaire d'ajout de matière -->
+        <!-- Formulaire d'ajout de module -->
         <section class="card form-card">
             <div class="card-header">
                 <h2><i class="fa-solid fa-folder-plus"></i> Ajouter un Module / Matière</h2>
             </div>
-            <form id="addSubjectForm" onsubmit="ajouterMatiere(event)" class="card-body">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="subjectName">Nom du module :</label>
-                        <input type="text" id="subjectName" required placeholder="Ex: Algorithmique, Physiques, SQL...">
-                    </div>
-                    <div class="form-group">
-                        <label for="subjectCoef">Coefficient :</label>
-                        <input type="number" id="subjectCoef" min="0.5" step="0.5" required placeholder="Ex: 2 ou 3">
+            <div class="card-body">
+                <!-- Choix du mode d'entrée -->
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label><strong>Mode d'entrée :</strong></label>
+                    <div style="display: flex; gap: 20px; margin-top: 5px; flex-wrap: wrap;">
+                        <label><input type="radio" name="entryMode" value="notes" checked onchange="basculerModeSaisie('notes')"> Saisie Détaillée (Devoirs + Test Lourd)</label>
+                        <label><input type="radio" name="entryMode" value="direct" onchange="basculerModeSaisie('direct')"> Saisie Directe de la Moyenne</label>
                     </div>
                 </div>
-                <div class="form-group checkbox-container">
-                    <label class="custom-checkbox">
-                        <input type="checkbox" id="hasTestLourd">
-                        <span class="checkmark"></span>
-                        Ce module comporte un Test Lourd (TL)
-                    </label>
-                </div>
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="fa-solid fa-check"></i> Créer la matière
-                </button>
-            </form>
+
+                <form id="addSubjectForm" onsubmit="ajouterMatiere(event)">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="subjectName">Nom du module :</label>
+                            <input type="text" id="subjectName" required placeholder="Ex: Architecture des Ordinateurs">
+                        </div>
+                        <div class="form-group">
+                            <label for="subjectCoef">Coefficient :</label>
+                            <input type="number" id="subjectCoef" min="1" step="1" required placeholder="Ex: 2 ou 3">
+                        </div>
+                    </div>
+
+                    <!-- Champ réservé à la Saisie Directe (caché par défaut) -->
+                    <div id="directAvgGroup" class="form-group" style="display: none;">
+                        <label for="directAverage">Moyenne obtenue du module (/20) :</label>
+                        <input type="number" id="directAverage" min="0" max="20" step="0.01" placeholder="Ex: 13.5">
+                    </div>
+
+                    <!-- Options réservées à la Saisie Détaillée -->
+                    <div id="notesGroup" class="form-group checkbox-container">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" id="hasTestLourd" checked>
+                            <span class="checkmark"></span>
+                            Ce module comporte un Test Lourd (TL)
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fa-solid fa-check"></i> Enregistrer la matière
+                    </button>
+                </form>
+            </div>
         </section>
 
         <!-- Liste dynamique des matières -->
@@ -100,7 +128,7 @@
                 <h2><i class="fa-solid fa-chart-line"></i> Résultats & Synthèse</h2>
             </div>
             <div class="card-body text-center">
-                <button onclick="calculerMoyennes()" class="btn btn-action btn-pulse">
+                <button onclick="calculerMoyennes()" class="btn btn-action">
                     <i class="fa-solid fa-calculator"></i> Calculer les moyennes
                 </button>
                 
@@ -126,5 +154,4 @@
 
     <script src="script.js"></script>
 </body>
-                        </html>
-                        
+</html>
